@@ -10,6 +10,10 @@
 
 using namespace std;
 
+void prefix_sum(void *a) {
+    
+}
+
 int main(int argc, char **argv)
 {
     // Parse args
@@ -52,9 +56,10 @@ int main(int argc, char **argv)
     }
     else {
         //start_threads(threads, opts.n_threads, ps_args, <your function>);
+        start_threads(threads, opts.n_threads, ps_args, prefix_sum);
 
         // Wait for threads to finish
-        join_threads(threads, opts.n_threads);
+        // join_threads(threads, opts.n_threads);
     }
 
     //End timer and print out elapsed
