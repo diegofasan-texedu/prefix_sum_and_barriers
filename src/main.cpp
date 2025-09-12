@@ -1,5 +1,6 @@
 #include <iostream>
 #include <argparse.h>
+#include <pthread.h>
 #include <threads.h>
 #include <io.h>
 #include <chrono>
@@ -27,7 +28,10 @@ int main(int argc, char **argv)
     }
 
     // Setup threads
-    pthread_t *threads = sequential ? NULL : alloc_threads(opts.n_threads);;
+    pthread_t *threads = sequential ? NULL : alloc_threads(opts.n_threads);
+    
+    pthread_barrier_t barrier;
+    pthread_barrier_init(&barrier, NULL, opts.n_threads);
 
     // Setup args & read input data
     prefix_sum_args_t *ps_args = alloc_args(opts.n_threads);
@@ -37,11 +41,16 @@ int main(int argc, char **argv)
 
     //"op" is the operator you have to use, but you can use "add" to test
     int (*scan_operator)(int, int, int);
-    scan_operator = op;
-    //scan_operator = add;
+    // scan_operator = op;
+    scan_operator = add;
 
     fill_args(ps_args, opts.n_threads, n_vals, input_vals, output_vals,
-        opts.spin, scan_operator, opts.n_loops);
+        opts.spin, scan_operator, opts.n_loops, &barrier);
+
+    // Copy numbers from output vals
+    for (int i = 0; i < n_vals; ++i) {
+        output_vals[i] = input_vals[i];
+    }
 
     // Start timer
     auto start = std::chrono::high_resolution_clock::now();
@@ -55,11 +64,11 @@ int main(int argc, char **argv)
         }
     }
     else {
-        //start_threads(threads, opts.n_threads, ps_args, <your function>);
-        start_threads(threads, opts.n_threads, ps_args, prefix_sum);
+        // //start_threads(threads, opts.n_threads, ps_args, <your function>);
+        start_threads(threads, opts.n_threads, ps_args, compute_prefix_sum);
 
-        // Wait for threads to finish
-        // join_threads(threads, opts.n_threads);
+        // // Wait for threads to finish
+        join_threads(threads, opts.n_threads);
     }
 
     //End timer and print out elapsed
